@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Film Crew Budget</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: #0a0a0b;
+    color: #e8e6e1;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    padding: 24px 24px 80px;
+  }
+
+  .title-input {
+    background: transparent; border: none; color: #e8e6e1;
+    font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800;
+    letter-spacing: -0.5px; outline: none; padding: 0; width: 100%; margin-bottom: 4px;
+  }
+  .title-input::placeholder { color: #2a2a2d; }
+  .header-meta {
+    font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 3px; color: #c9a227; margin-bottom: 8px;
+  }
+  .header-sub { font-family: 'Outfit', sans-serif; font-size: 12px; color: #4a4a4d; }
+
+  /* Section header */
+  .section-header {
+    display: flex; align-items: center; gap: 12px;
+    margin: 36px 0 12px; user-select: none;
+  }
+  .section-header h2 {
+    font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 2px; color: #c9a227; white-space: nowrap;
+  }
+  .section-header .line { flex: 1; height: 1px; background: #1e1e22; }
+  .section-header .badge {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: #5a5a5d; background: #131316; border: 1px solid #1e1e22;
+    border-radius: 4px; padding: 3px 8px; white-space: nowrap;
+  }
+
+  /* Grid */
+  .grid-wrap {
+    border: 1px solid #1e1e22; border-radius: 6px;
+    overflow-x: auto; background: #0e0e10;
+  }
+  .grid-table {
+    width: 100%; border-collapse: collapse; table-layout: fixed; min-width: 700px;
+  }
+  .grid-table th, .grid-table td {
+    border-right: 1px solid #1a1a1e; border-bottom: 1px solid #1a1a1e;
+    padding: 0; position: relative;
+  }
+  .grid-table th:last-child, .grid-table td:last-child { border-right: none; }
+  .grid-table tbody tr:last-child td { border-bottom: none; }
+  .grid-table thead tr { background: #131316; }
+  .grid-table thead th { border-bottom: 2px solid #c9a227; }
+  .grid-table th {
+    padding: 10px 10px; font-family: 'Outfit', sans-serif; font-size: 10.5px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+    color: #c9a227; user-select: none; white-space: nowrap; overflow: visible;
+  }
+  .grid-table tbody tr { transition: background 0.1s; }
+  .grid-table tbody tr:hover { background: rgba(255,255,255,0.015); }
+
+  .grid-table td input {
+    background: transparent; border: none; color: #e8e6e1;
+    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 400;
+    width: 100%; padding: 8px 10px; outline: none; transition: background 0.15s;
+  }
+  .grid-table td input:focus { background: rgba(255,255,255,0.04); }
+  .grid-table td input::placeholder { color: #3a3a3d; font-style: italic; }
+  .grid-table td input.rate-input {
+    text-align: right; font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-weight: 500; letter-spacing: -0.3px;
+  }
+
+  .total-cell {
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500;
+    color: #2a2a2d; padding: 8px 10px; text-align: right;
+  }
+  .total-cell.active { color: #e8e6e1; }
+
+  .resolved-rate {
+    font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+    color: #c9a227; text-align: right; padding: 0 10px 4px;
+    letter-spacing: -0.3px; display: none;
+  }
+  .resolved-rate.visible { display: block; }
+
+  /* Row number + controls */
+  .num-cell {
+    font-size: 11px; color: #3a3a3d; text-align: center;
+    font-family: 'JetBrains Mono', monospace; user-select: none;
+    position: relative; vertical-align: middle; width: 42px;
+  }
+  .num-cell .row-num { display: block; padding: 8px 0; }
+  .row-controls {
+    position: absolute; left: 0; top: 0; bottom: 0; right: 0;
+    display: none; flex-direction: column; align-items: center;
+    justify-content: center; gap: 0; background: #131316; z-index: 5;
+  }
+  .num-cell:hover .row-controls { display: flex; }
+  .num-cell:hover .row-num { visibility: hidden; }
+  .row-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 13px; line-height: 1; padding: 3px 6px;
+    color: #5a5a5d; transition: color 0.1s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .row-btn:hover { color: #e8e6e1; }
+  .row-btn.del:hover { color: #d44b4b; }
+  .row-btn.add:hover { color: #3a9e5c; }
+
+  /* Column resize handle */
+  .col-resize {
+    position: absolute; right: -3px; top: 0; bottom: 0;
+    width: 7px; cursor: col-resize; z-index: 10;
+    background: transparent; transition: background 0.15s;
+  }
+  .col-resize:hover, .col-resize.active { background: #c9a227; }
+
+  /* Add row bar */
+  .add-row-bar {
+    border: 1px solid #1e1e22; border-top: none;
+    border-radius: 0 0 6px 6px; background: #0e0e10;
+    text-align: center; padding: 6px; cursor: pointer;
+    font-family: 'Outfit', sans-serif; font-size: 11px;
+    color: #3a3a3d; text-transform: uppercase; letter-spacing: 1.5px;
+    transition: background 0.15s, color 0.15s; user-select: none;
+  }
+  .add-row-bar:hover { background: #131316; color: #c9a227; }
+
+  /* Summary cards */
+  .summary-bar { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .summary-card {
+    background: #131316; border: 1px solid #1e1e22;
+    border-radius: 6px; padding: 18px 20px; position: relative; overflow: hidden;
+  }
+  .summary-card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; }
+  .summary-card.amber::before { background:#c9a227; }
+  .summary-card.green::before { background:#3a9e5c; }
+  .summary-card.red::before { background:#d44b4b; }
+  .summary-card.blue::before { background:#4a8fd4; }
+  .summary-label {
+    font-family:'Outfit',sans-serif; font-size:10px; font-weight:700;
+    text-transform:uppercase; letter-spacing:2px; color:#5a5a5d; margin-bottom:8px;
+  }
+  .summary-value {
+    font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:700; letter-spacing:-1px;
+  }
+  .summary-value.amber{color:#c9a227} .summary-value.green{color:#3a9e5c}
+  .summary-value.red{color:#d44b4b} .summary-value.blue{color:#4a8fd4}
+  .summary-sub { font-family:'Outfit',sans-serif; font-size:11px; color:#4a4a4d; margin-top:4px; }
+
+  /* Grand total */
+  .grand-total {
+    margin-top: 28px; padding: 20px 24px;
+    background: #131316; border: 2px solid #c9a227;
+    border-radius: 8px; display: flex;
+    align-items: center; justify-content: space-between;
+  }
+  .grand-total-label {
+    font-family:'Outfit',sans-serif; font-size:13px; font-weight:700;
+    text-transform:uppercase; letter-spacing:3px; color:#c9a227;
+  }
+  .grand-total-value {
+    font-family:'JetBrains Mono',monospace; font-size:32px;
+    font-weight:700; letter-spacing:-1px; color:#e8e6e1;
+  }
+
+  body.resizing { cursor:col-resize!important; user-select:none!important; }
+  body.resizing * { cursor:col-resize!important; }
+
+  @media(max-width:700px){
+    .summary-bar{grid-template-columns:1fr} body{padding:12px 12px 60px}
+  }
+</style>
+</head>
+<body>
+
+<div style="margin-bottom:24px">
+  <div class="header-meta">Production Budget — Crew</div>
+  <input class="title-input" id="projectTitle" value="UNTITLED FILM" placeholder="Project Title">
+  <div class="header-sub" id="headerSub">3-day shoot · 0 crew listed</div>
+</div>
+
+<div id="section-prod"></div>
+<div id="section-post"></div>
+
+<div class="grand-total">
+  <div class="grand-total-label">Grand Total — All Crew (3 Days)</div>
+  <div class="grand-total-value" id="grandTotal">$0.00</div>
+</div>
+
+<script>
+const FILM_DAYS = 3;
+
+function evalRate(expr) {
+  if (!expr || !expr.trim()) return 0;
+  try {
+    const s = expr.replace(/[^0-9+\-*/(). ]/g,'');
+    if (!s.trim()) return 0;
+    const r = Function('"use strict"; return (' + s + ')')();
+    return typeof r === 'number' && isFinite(r) ? r : 0;
+  } catch { return 0; }
+}
+function fmtDec(n){return n.toLocaleString('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2})}
+function fmt(n){return n.toLocaleString('en-US',{style:'currency',currency:'USD',minimumFractionDigits:0,maximumFractionDigits:0})}
+function hasOp(s){return /[+\-*/]/.test(s)}
+
+const sections = {};
+
+function createSection(cfg) {
+  const container = document.getElementById(cfg.containerId);
+  let uid = cfg.initialRows;
+
+  function buildRow(i) {
+    return `<tr data-row="${i}">
+      <td class="num-cell">
+        <span class="row-num">${i}</span>
+        <div class="row-controls">
+          <button class="row-btn add" title="Insert row above" data-action="add" data-row="${i}">＋</button>
+          <button class="row-btn del" title="Delete row" data-action="del" data-row="${i}">✕</button>
+        </div>
+      </td>
+      <td><input placeholder="e.g. ${cfg.placeholder}" data-field="crew"></td>
+      <td><input placeholder="—" data-field="name"></td>
+      <td><input placeholder="—" data-field="work"></td>
+      <td><input class="rate-input" placeholder="$0" data-field="rate"><div class="resolved-rate"></div></td>
+      <td class="total-cell">$0.00</td>
+    </tr>`;
+  }
+
+  function render() {
+    let rows = '';
+    for (let i = 1; i <= cfg.initialRows; i++) rows += buildRow(i);
+
+    container.innerHTML = `
+    <div class="section-header">
+      <h2>${cfg.title}</h2><div class="line"></div>
+      <div class="badge" id="${cfg.prefix}-badge">0 crew</div>
+    </div>
+    <div class="grid-wrap">
+    <table class="grid-table" id="${cfg.prefix}-table">
+      <colgroup>
+        <col style="width:42px">
+        <col style="width:${cfg.colWidths[0]}px" data-col="1">
+        <col style="width:${cfg.colWidths[1]}px" data-col="2">
+        <col style="width:${cfg.colWidths[2]}px" data-col="3">
+        <col style="width:${cfg.colWidths[3]}px" data-col="4">
+        <col style="width:${cfg.colWidths[4]}px" data-col="5">
+      </colgroup>
+      <thead><tr>
+        <th style="color:#3a3a3d;letter-spacing:0">#</th>
+        <th>Crew / Position<span class="col-resize" data-col="1"></span></th>
+        <th>Name<span class="col-resize" data-col="2"></span></th>
+        <th>${cfg.workLabel}<span class="col-resize" data-col="3"></span></th>
+        <th style="text-align:right">Day Rate<span class="col-resize" data-col="4"></span></th>
+        <th style="text-align:right">${FILM_DAYS}-Day Total</th>
+      </tr></thead>
+      <tbody id="${cfg.prefix}-tbody">${rows}</tbody>
+    </table>
+    </div>
+    <div class="add-row-bar" id="${cfg.prefix}-addbar">+ Add Row</div>
+    <div class="summary-bar">
+      <div class="summary-card ${cfg.colors[0]}">
+        <div class="summary-label">Crew Members</div>
+        <div class="summary-value ${cfg.colors[0]}" id="${cfg.prefix}-sumCrew">0</div>
+        <div class="summary-sub" id="${cfg.prefix}-sumCrewSub">positions filled</div>
+      </div>
+      <div class="summary-card ${cfg.colors[1]}">
+        <div class="summary-label">Cost Per Day</div>
+        <div class="summary-value ${cfg.colors[1]}" id="${cfg.prefix}-sumDaily">$0</div>
+        <div class="summary-sub">combined daily</div>
+      </div>
+      <div class="summary-card ${cfg.colors[2]}">
+        <div class="summary-label">${cfg.title} Total (${FILM_DAYS} Days)</div>
+        <div class="summary-value ${cfg.colors[2]}" id="${cfg.prefix}-sumTotal">$0.00</div>
+        <div class="summary-sub" id="${cfg.prefix}-sumTotalSub">0 crew × ${FILM_DAYS} days</div>
+      </div>
+    </div>`;
+    attachEvents();
+  }
+
+  function renumber() {
+    const rows = container.querySelectorAll(`#${cfg.prefix}-tbody tr`);
+    rows.forEach((tr, idx) => {
+      const n = idx + 1;
+      tr.dataset.row = n;
+      tr.querySelector('.row-num').textContent = n;
+      tr.querySelectorAll('[data-row]').forEach(el => el.dataset.row = n);
+    });
+  }
+
+  function recalc() {
+    let crewCount = 0, totalRate = 0;
+    const rows = container.querySelectorAll(`#${cfg.prefix}-tbody tr`);
+
+    rows.forEach(tr => {
+      const crew = (tr.querySelector('[data-field="crew"]')?.value||'').trim();
+      const name = (tr.querySelector('[data-field="name"]')?.value||'').trim();
+      const rateStr = tr.querySelector('[data-field="rate"]')?.value||'';
+      const rate = evalRate(rateStr);
+      const total = rate * FILM_DAYS;
+
+      if (crew || name) crewCount++;
+      totalRate += rate;
+
+      const totEl = tr.querySelector('.total-cell');
+      totEl.textContent = total > 0 ? fmtDec(total) : '$0.00';
+      totEl.classList.toggle('active', total > 0);
+
+      const resEl = tr.querySelector('.resolved-rate');
+      if (rateStr && hasOp(rateStr) && rate > 0) {
+        resEl.textContent = '= ' + fmtDec(rate);
+        resEl.classList.add('visible');
+      } else {
+        resEl.classList.remove('visible');
+      }
+    });
+
+    const el = id => document.getElementById(id);
+    el(`${cfg.prefix}-sumCrew`).textContent = crewCount;
+    el(`${cfg.prefix}-sumCrewSub`).textContent = `positions filled of ${rows.length}`;
+    el(`${cfg.prefix}-sumDaily`).textContent = fmt(totalRate);
+    el(`${cfg.prefix}-sumTotal`).textContent = fmtDec(totalRate * FILM_DAYS);
+    el(`${cfg.prefix}-sumTotalSub`).textContent = `${crewCount} crew × ${FILM_DAYS} days`;
+    el(`${cfg.prefix}-badge`).textContent = `${crewCount} crew`;
+
+    updateGrandTotal();
+  }
+
+  function attachEvents() {
+    const tbody = document.getElementById(`${cfg.prefix}-tbody`);
+    const table = document.getElementById(`${cfg.prefix}-table`);
+
+    tbody.addEventListener('input', e => {
+      if (!e.target.dataset?.field) return;
+      if (e.target.dataset.field === 'rate')
+        e.target.value = e.target.value.replace(/[^0-9+\-*/(). ]/g,'');
+      recalc();
+    });
+
+    tbody.addEventListener('click', e => {
+      const btn = e.target.closest('.row-btn');
+      if (!btn) return;
+      const rowNum = parseInt(btn.dataset.row);
+      const allRows = tbody.querySelectorAll('tr');
+
+      if (btn.dataset.action === 'del') {
+        if (allRows.length <= 1) return;
+        const tr = [...allRows].find(r => parseInt(r.dataset.row) === rowNum);
+        if (tr) tr.remove();
+        renumber(); recalc();
+      } else if (btn.dataset.action === 'add') {
+        const tr = [...allRows].find(r => parseInt(r.dataset.row) === rowNum);
+        const temp = document.createElement('tbody');
+        temp.innerHTML = buildRow(++uid);
+        tbody.insertBefore(temp.firstElementChild, tr);
+        renumber(); recalc();
+      }
+    });
+
+    document.getElementById(`${cfg.prefix}-addbar`).addEventListener('click', () => {
+      const temp = document.createElement('tbody');
+      temp.innerHTML = buildRow(++uid);
+      tbody.appendChild(temp.firstElementChild);
+      renumber(); recalc();
+    });
+
+    // Column resize
+    table.querySelectorAll('.col-resize').forEach(handle => {
+      handle.addEventListener('mousedown', e => {
+        e.preventDefault();
+        const colIdx = handle.dataset.col;
+        const col = table.querySelector(`colgroup col[data-col="${colIdx}"]`);
+        const startX = e.clientX;
+        const startW = parseInt(col.style.width) || 150;
+        handle.classList.add('active');
+        document.body.classList.add('resizing');
+
+        const onMove = ev => {
+          col.style.width = Math.max(60, startW + ev.clientX - startX) + 'px';
+        };
+        const onUp = () => {
+          handle.classList.remove('active');
+          document.body.classList.remove('resizing');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+  }
+
+  render();
+
+  return {
+    recalc,
+    getTotal() {
+      let t = 0;
+      container.querySelectorAll(`#${cfg.prefix}-tbody tr`).forEach(tr => {
+        t += evalRate(tr.querySelector('[data-field="rate"]')?.value||'');
+      });
+      return t * FILM_DAYS;
+    },
+    getCrewCount() {
+      let c = 0;
+      container.querySelectorAll(`#${cfg.prefix}-tbody tr`).forEach(tr => {
+        const a = (tr.querySelector('[data-field="crew"]')?.value||'').trim();
+        const b = (tr.querySelector('[data-field="name"]')?.value||'').trim();
+        if (a || b) c++;
+      });
+      return c;
+    }
+  };
+}
+
+sections.prod = createSection({
+  containerId: 'section-prod', prefix: 'prod',
+  title: 'Production', workLabel: 'Major Work',
+  placeholder: 'Director of Photography',
+  initialRows: 20, colWidths: [200,180,220,130,120],
+  colors: ['amber','green','red'],
+});
+
+sections.post = createSection({
+  containerId: 'section-post', prefix: 'post',
+  title: 'Post-Production', workLabel: 'Major Work',
+  placeholder: 'Editor',
+  initialRows: 10, colWidths: [200,180,220,130,120],
+  colors: ['blue','green','red'],
+});
+
+function updateGrandTotal() {
+  const total = sections.prod.getTotal() + sections.post.getTotal();
+  const crew = sections.prod.getCrewCount() + sections.post.getCrewCount();
+  document.getElementById('grandTotal').textContent = fmtDec(total);
+  document.getElementById('headerSub').textContent = `${FILM_DAYS}-day shoot · ${crew} crew listed`;
+}
+</script>
+</body>
+</html>
